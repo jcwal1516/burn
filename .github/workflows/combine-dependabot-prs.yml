@@ -14,8 +14,27 @@ jobs:
   combine-prs:
     runs-on: ubuntu-latest
     steps:
+      - name: Fetch pinned PR combiner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: github/combine-prs
+          ref: 2909f404763c3177a456e052bdb7f2e85d3a7cb3 # v5.2.0
+          path: .github/actions/combine-prs
+          persist-credentials: false
+      - name: Select Node.js 24 for the pinned combiner
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          action = Path(".github/actions/combine-prs/action.yml")
+          source = action.read_text()
+          old = 'using: "node20"'
+          if source.count(old) != 1:
+              raise SystemExit("Unexpected runtime in pinned combine-prs action")
+          action.write_text(source.replace(old, 'using: "node24"'))
+          PY
       - name: combine-prs
         id: combine-prs
-        uses: github/combine-prs@v5.2.0
+        uses: ./.github/actions/combine-prs
         with:
           labels: dependencies,automated
